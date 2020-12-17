@@ -1,0 +1,15 @@
+name: Argument tense check
+on:
+  push:
+    paths:
+      - '**.py'
+jobs:
+  spelling:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Status Check for present tense args
+      uses: SFLScientific/PresentTenseArgs@master
+
+
+    

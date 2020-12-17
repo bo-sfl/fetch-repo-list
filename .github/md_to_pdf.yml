@@ -1,0 +1,41 @@
+name: MD to PDF
+# only run if .md updated
+on:
+  push:
+    paths:
+      - '**.md'
+jobs:
+  makepdfs:
+    runs-on: ubuntu-latest
+    if: ${{ (github.repository != 'SFLScientific/SFL-Template') }}
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: ${{ github.head_ref }}
+    # converts all special chars to safe in the mds and makes backups
+    - name: Format trees in MDs
+      run: for F in $(find | grep -i "readme.md"); do cp $F $F.orig && sed -i 's/├/\+/g; s/│/\|/g;  s/─/-/g; s/└/\\/g' $F;done    
+    # converts all md to pdf
+    - name: Markdown to PDF
+      uses: valtyr/pandoc-action@v0.1-alpha
+    - name: Remove the readme pdf file in .github
+      run: rm .github/Readme.pdf
+    - name: Markdown to PDF
+      uses: valtyr/pandoc-action@v0.1-alpha
+    # remove all pdfs that were untracked and not readme
+    - name: Remove non readme pdfs
+      run: for pdf in $(git ls-files --others --exclude-standard | grep ".pdf" | grep -v --ignore-case readme); do rm $pdf; done
+    # move original mds back into place
+    - name: Move original MDs back
+      run: for F in $(find | grep -i ".md.orig"); do mv $F $(echo $F | sed 's/.orig//g') ;done  
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v3.5.0
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+        commit-message: PR with converted to PDF
+        committer: AutoCommit <example@users.noreply.github.com>
+        title: File conversions MD_to_PDF
+        body: This is an auto-generated PR
+        labels: pdfs, automated pr
+        branch: md-to-pdf-patches
